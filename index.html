@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AURORA GT — гиперкар для ночного города</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#050608;
+    --ink:#eef1f6;
+    --ink-dim:#9aa3b2;
+    --accent:#4fd8ff;
+    --accent-dim:#1c6f8a;
+    --line: rgba(238,241,246,0.14);
+    --scrim-strong: rgba(3,4,6,0.86);
+    --scrim-soft: rgba(3,4,6,0.28);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%; margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
+    overflow:hidden; overscroll-behavior:none;
+  }
+  html{ scroll-padding-top: env(safe-area-inset-top, 0px); }
+  h1,h2,h3, .kicker, .stat-value, .wordmark{ font-family:'Rajdhani', 'Inter', system-ui, sans-serif; }
+
+  .stage{
+    position:fixed; inset:0; width:100%; height:100%;
+    overflow:hidden;
+  }
+  .layer{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; object-position:center;
+    transition: opacity 900ms ease;
+  }
+  #posterImg{ opacity:1; z-index:1; }
+  #transVideo{ opacity:0; z-index:2; background:#000; }
+
+  .scrim{
+    position:absolute; inset:0; z-index:3; pointer-events:none;
+    background:
+      linear-gradient(180deg, var(--scrim-strong) 0%, rgba(3,4,6,0.15) 34%, rgba(3,4,6,0.05) 55%, rgba(3,4,6,0.5) 78%, var(--scrim-strong) 100%);
+  }
+
+  .topbar{
+    position:absolute; top:0; left:0; right:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: calc(22px + env(safe-area-inset-top,0px)) clamp(18px,4vw,48px) 18px;
+  }
+  .wordmark{
+    font-size:19px; font-weight:700; letter-spacing:0.14em; color:var(--ink);
+  }
+  .wordmark span{ color:var(--accent); }
+  .cta-mini{
+    font-family:'Inter', sans-serif; font-size:13px; font-weight:600;
+    color:var(--ink); background:transparent; border:1px solid var(--line);
+    padding:9px 18px; border-radius:999px; cursor:pointer; letter-spacing:0.02em;
+    transition: border-color 220ms ease, background 220ms ease;
+  }
+  .cta-mini:hover{ border-color:var(--accent); background:rgba(79,216,255,0.08); }
+  .cta-mini:focus-visible, .cta-main:focus-visible, .dot:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+
+  .content{
+    position:absolute; left:0; right:0; bottom:0; z-index:5;
+    padding: 0 clamp(18px,4vw,48px) clamp(70px, 10vh, 110px);
+    max-width:720px;
+  }
+  .kicker{
+    font-size:14px; font-weight:600; letter-spacing:0.1em; color:var(--accent);
+    margin:0 0 14px; opacity:0; transform:translateY(8px);
+    animation: rise 700ms ease forwards 120ms;
+  }
+  .headline{
+    font-size:clamp(30px, 5.4vw, 58px); line-height:1.05; font-weight:700;
+    margin:0 0 16px; letter-spacing:0.005em; max-width:14ch;
+    opacity:0; transform:translateY(10px);
+    animation: rise 750ms ease forwards 200ms;
+  }
+  .body-copy{
+    font-size:clamp(14px,1.7vw,17px); line-height:1.55; color:var(--ink-dim);
+    max-width:46ch; margin:0 0 26px;
+    opacity:0; transform:translateY(10px);
+    animation: rise 750ms ease forwards 300ms;
+  }
+  .stats{
+    display:flex; gap:clamp(20px,4vw,44px); margin:0 0 30px; flex-wrap:wrap;
+    opacity:0; transform:translateY(10px);
+    animation: rise 750ms ease forwards 380ms;
+  }
+  .stat{ border-left:1px solid var(--line); padding-left:14px; min-width:84px; }
+  .stat-value{ font-size:clamp(20px,2.6vw,30px); font-weight:700; color:var(--ink); display:block; }
+  .stat-label{ font-size:12px; color:var(--ink-dim); margin-top:2px; display:block; }
+
+  .cta-main{
+    font-family:'Inter', sans-serif; font-size:15px; font-weight:600; color:#03181f;
+    background:var(--accent); border:none; padding:15px 30px; border-radius:999px;
+    cursor:pointer; letter-spacing:0.01em;
+    opacity:0; transform:translateY(10px);
+    animation: rise 750ms ease forwards 460ms;
+    transition: filter 200ms ease, transform 200ms ease;
+  }
+  .cta-main:hover{ filter:brightness(1.08); }
+  .cta-main:active{ transform:translateY(1px); }
+
+  @keyframes rise{ to{ opacity:1; transform:translateY(0); } }
+
+  .dots{
+    position:absolute; z-index:6; right:clamp(16px,3vw,34px); top:50%;
+    transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:14px; align-items:center;
+  }
+  .dot{
+    width:8px; height:8px; border-radius:50%; background:rgba(238,241,246,0.28);
+    border:none; padding:0; cursor:default; transition: all 320ms ease;
+  }
+  .dot.active{ background:var(--accent); height:26px; border-radius:5px; }
+
+  .scrollhint{
+    position:absolute; z-index:6; left:50%; bottom:calc(28px + env(safe-area-inset-bottom,0px));
+    transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:8px;
+    font-size:12px; color:var(--ink-dim); letter-spacing:0.08em;
+    transition: opacity 400ms ease;
+  }
+  .scrollhint svg{ animation: bob 1.8s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(6px);} }
+
+  .toast{
+    position:fixed; z-index:20; left:50%; bottom:36px; transform:translate(-50%, 20px);
+    background:#101317; border:1px solid var(--line); color:var(--ink);
+    padding:14px 22px; border-radius:12px; font-size:14px;
+    opacity:0; pointer-events:none; transition: all 320ms ease;
+    box-shadow:0 12px 30px rgba(0,0,0,0.5);
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+  @media (max-width: 640px){
+    .content{ max-width:100%; padding-bottom: calc(96px + env(safe-area-inset-bottom,0px)); }
+    .stats{ gap:20px; }
+    .dots{ right:12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .layer{ transition:opacity 200ms linear; }
+    .kicker,.headline,.body-copy,.stats,.cta-main{ animation:none; opacity:1; transform:none; }
+    .scrollhint svg{ animation:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <img id="posterImg" class="layer" alt="" src="assets/poster-0.jpg">
+    <video id="transVideo" class="layer" muted playsinline preload="auto"></video>
+    <div class="scrim"></div>
+
+    <header class="topbar">
+      <div class="wordmark">AURORA<span> GT</span></div>
+      <button class="cta-mini" id="ctaTop">Тест-драйв</button>
+    </header>
+
+    <div class="content" id="content"></div>
+
+    <div class="dots" id="dots">
+      <button class="dot" aria-label="Сцена 1"></button>
+      <button class="dot" aria-label="Сцена 2"></button>
+      <button class="dot" aria-label="Сцена 3"></button>
+      <button class="dot" aria-label="Сцена 4"></button>
+    </div>
+
+    <div class="scrollhint" id="scrollhint">
+      <span>Прокрутите вниз</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v16M6 14l6 6 6-6"/></svg>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Заявка отправлена. Мы свяжемся с вами.</div>
+
+<script>
+(function(){
+  // Порядок: 1) разворот (открытие) 2) полный выезд/раскрытие машины 3) колесо крупным планом (финал)
+  var posters = ["assets/poster-0.jpg","assets/poster-1.jpg","assets/poster-2.jpg","assets/poster-3.jpg"];
+  var clips = ["assets/video-1-uturn.mp4","assets/video-2-reveal.mp4","assets/video-3-wheel.mp4"];
+
+  var content = [
+    {
+      kicker: "",
+      headline: "Город спит. Она — нет.",
+      body: "Купе с твин-турбо V10, рождённое для часа, когда светофоры мигают жёлтым.",
+      stats: null,
+      cta: false
+    },
+    {
+      kicker: "01 — Управление",
+      headline: "Разворот вместо тормоза",
+      body: "Полный привод и задняя ось с изменяемым углом поворота: там, где другие сбрасывают скорость, она входит в поворот.",
+      stats: [ ["4WD","привод"], ["420 кг","прижимной силы"], ["±3°","поворот задней оси"] ],
+      cta: false
+    },
+    {
+      kicker: "02 — Силовая установка",
+      headline: "720 сил без промедления",
+      body: "4.0 литра, два турбокомпрессора и отклик за доли секунды на каждое движение педали.",
+      stats: [ ["4.0 Л","V10 битурбо"], ["720","л.с."], ["2.9 с","0–100 км/ч"] ],
+      cta: false
+    },
+    {
+      kicker: "03 — Тормоза",
+      headline: "Остановка так же эффектна, как старт",
+      body: "Карбон-керамические диски 410 мм и шестипоршневые суппорты гасят скорость без единого лишнего метра.",
+      stats: [ ["410 мм","диск спереди"], ["6","поршней"], ["33 м","тормозной путь со 100"] ],
+      cta: true
+    }
+  ];
+
+  var state = { index: 0, animating: false };
+  var posterImg = document.getElementById('posterImg');
+  var video = document.getElementById('transVideo');
+  var contentEl = document.getElementById('content');
+  var dots = document.querySelectorAll('.dot');
+  var scrollhint = document.getElementById('scrollhint');
+  var toast = document.getElementById('toast');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function renderContent(i){
+    var c = content[i];
+    var html = '';
+    if(c.kicker) html += '<p class="kicker">'+c.kicker+'</p>';
+    html += '<h1 class="headline">'+c.headline+'</h1>';
+    html += '<p class="body-copy">'+c.body+'</p>';
+    if(c.stats){
+      html += '<div class="stats">';
+      c.stats.forEach(function(s){
+        html += '<div class="stat"><span class="stat-value">'+s[0]+'</span><span class="stat-label">'+s[1]+'</span></div>';
+      });
+      html += '</div>';
+    }
+    if(c.cta){
+      html += '<button class="cta-main" id="ctaMain">Записаться на тест-драйв</button>';
+    }
+    contentEl.innerHTML = html;
+    if(c.cta){
+      document.getElementById('ctaMain').addEventListener('click', showToast);
+    }
+    dots.forEach(function(d,idx){ d.classList.toggle('active', idx===i); });
+    scrollhint.style.opacity = (i===0) ? '1' : '0';
+  }
+
+  function showToast(){
+    toast.classList.add('show');
+    setTimeout(function(){ toast.classList.remove('show'); }, 2800);
+  }
+
+  function crossToPoster(i, done){
+    posterImg.onload = function(){
+      posterImg.style.opacity = '1';
+      video.style.opacity = '0';
+      video.pause();
+      done();
+    };
+    posterImg.src = posters[i];
+  }
+
+  function goForward(){
+    if(state.animating || state.index >= 3) return;
+    state.animating = true;
+    var boundary = state.index;
+    if(reduceMotion){
+      state.index += 1;
+      crossToPoster(state.index, function(){ renderContent(state.index); state.animating = false; });
+      return;
+    }
+    video.src = clips[boundary];
+    video.currentTime = 0;
+    video.style.opacity = '1';
+    posterImg.style.opacity = '0';
+    var played = video.play();
+    if(played && played.catch) played.catch(function(){});
+    video.onended = function(){
+      state.index += 1;
+      crossToPoster(state.index, function(){
+        renderContent(state.index);
+        state.animating = false;
+      });
+    };
+  }
+
+  function reverseScrub(vid, doneCb){
+    var speed = 2.4;
+    var last = performance.now();
+    function step(now){
+      var dt = (now-last)/1000; last = now;
+      var nt = vid.currentTime - dt*speed;
+      if(nt <= 0.03){ doneCb(); return; }
+      vid.currentTime = nt;
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function goBackward(){
+    if(state.animating || state.index <= 0) return;
+    state.animating = true;
+    var boundary = state.index - 1;
+    if(reduceMotion){
+      state.index -= 1;
+      crossToPoster(state.index, function(){ renderContent(state.index); state.animating = false; });
+      return;
+    }
+    video.src = clips[boundary];
+    video.style.opacity = '1';
+    posterImg.style.opacity = '0';
+    video.onloadedmetadata = function(){
+      video.currentTime = Math.max(0, video.duration - 0.05);
+      video.pause();
+      reverseScrub(video, function(){
+        state.index -= 1;
+        crossToPoster(state.index, function(){
+          renderContent(state.index);
+          state.animating = false;
+        });
+      });
+    };
+  }
+
+  var wheelLock = false;
+  window.addEventListener('wheel', function(e){
+    e.preventDefault();
+    if(state.animating || wheelLock) return;
+    if(Math.abs(e.deltaY) < 8) return;
+    wheelLock = true;
+    setTimeout(function(){ wheelLock = false; }, 650);
+    if(e.deltaY > 0) goForward(); else goBackward();
+  }, {passive:false});
+
+  var touchStartY = null;
+  window.addEventListener('touchstart', function(e){ touchStartY = e.touches[0].clientY; }, {passive:true});
+  window.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passive:false});
+  window.addEventListener('touchend', function(e){
+    if(touchStartY === null) return;
+    var dy = touchStartY - e.changedTouches[0].clientY;
+    touchStartY = null;
+    if(Math.abs(dy) < 40) return;
+    if(dy > 0) goForward(); else goBackward();
+  }, {passive:true});
+
+  window.addEventListener('keydown', function(e){
+    if(['ArrowDown','PageDown',' '].indexOf(e.key) > -1){ e.preventDefault(); goForward(); }
+    else if(['ArrowUp','PageUp'].indexOf(e.key) > -1){ e.preventDefault(); goBackward(); }
+  });
+
+  document.getElementById('ctaTop').addEventListener('click', showToast);
+
+  renderContent(0);
+})();
+</script>
+</body>
+</html>
